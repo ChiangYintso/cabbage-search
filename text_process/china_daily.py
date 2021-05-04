@@ -6,7 +6,7 @@ import aiohttp
 import bs4
 import nltk
 
-from text_process.task import Task
+from _task import Task
 
 
 class ChinaDailyTask(Task):

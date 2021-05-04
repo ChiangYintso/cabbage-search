@@ -1,12 +1,11 @@
 # -*- coding: utf-8 -*-
 import asyncio
-import logging
 from typing import Optional
 
 import aiohttp
 import bs4
 
-from text_process.task import Task
+from _task import Task
 
 
 class GMWTask(Task):
@@ -55,8 +54,6 @@ class GMWTask(Task):
 
 
 if __name__ == '__main__':
-    logging.basicConfig(format='%(asctime)s %(message)s', datefmt='%Y-%m-%d %H:%M:%S', level=logging.INFO)
     loop = asyncio.get_event_loop()
     gmw = GMWTask()
     loop.run_until_complete(gmw.run())
-    logging.info('done')
