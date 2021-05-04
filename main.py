@@ -14,5 +14,6 @@ def pre_process():
 
 if __name__ == '__main__':
     logging.basicConfig(format='%(asctime)s %(message)s', datefmt='%Y-%m-%d %H:%M:%S', level=logging.INFO)
+    logging.info('start')
     pre_process()
     logging.info('done')

@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 import abc
 import asyncio
-import logging
 import os
 from asyncio import FIRST_COMPLETED
 from pathlib import Path
@@ -74,8 +73,13 @@ class Task(metaclass=abc.ABCMeta):
     def _cut_words(self, text: str):
         for t in jieba.cut_for_search(text):
             t = t.strip()
-            if len(t) and t not in self._stop_words:
+            t = self.word_filter(t)
+            if t is not None:
                 yield t
+
+    @abc.abstractmethod
+    def word_filter(self, word: str) -> Optional[str]:
+        pass
 
     async def _fetch(self, url: str) -> str:
         async with self.session.get(url, headers=_HEADERS) as response:
@@ -88,7 +92,6 @@ class Task(metaclass=abc.ABCMeta):
             await f.write(article)
 
     async def event_loop(self):
-        logging.info('start...')
         while len(self.pending) > 0:
             self.done, self.pending = await asyncio.wait(self.pending, return_when=FIRST_COMPLETED)
             for task in self.done:

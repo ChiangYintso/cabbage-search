@@ -1,19 +1,29 @@
 # -*- coding: utf-8 -*-
 import asyncio
+from typing import Optional
 
 import aiohttp
 import bs4
+import nltk
 
 from text_process.task import Task
 
 
 class ChinaDailyTask(Task):
+
     def __init__(self):
         super().__init__('stopwords_en.txt')
+        self._ps = nltk.PorterStemmer()
 
     @property
     def name(self) -> str:
         return 'china_daily'
+
+    def word_filter(self, word: str) -> Optional[str]:
+        """English documentations will use The Porter Stemming Algorithm"""
+        if len(word) > 0 and word not in self._stop_words:
+            return self._ps.stem(word.lower())
+        return None
 
     def extract_news_url(self, html: str) -> None:
         soup = bs4.BeautifulSoup(html, features='lxml')

@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import asyncio
 import logging
+from typing import Optional
 
 import aiohttp
 import bs4
@@ -16,6 +17,11 @@ class GMWTask(Task):
     @property
     def name(self) -> str:
         return 'gmw'
+
+    def word_filter(self, word: str) -> Optional[str]:
+        if len(word) > 0 and word not in self._stop_words:
+            return word
+        return None
 
     def extract_title_and_text(self, soup: bs4.BeautifulSoup) -> str:
         title = soup.find('h1', {'class': 'u-title'}).contents[0]
