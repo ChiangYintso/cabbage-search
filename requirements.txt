@@ -1,2 +1,5 @@
 aiofiles
 aiohttp
+bs4
+fake_useragent
+jieba
