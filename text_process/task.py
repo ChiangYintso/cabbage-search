@@ -34,6 +34,7 @@ class Task(metaclass=abc.ABCMeta):
         self.done: set = set()
         self.next_article_id = 0
 
+        self._file_write_tasks = []
         self._stop_words = set()
 
         with open(os.path.join(os.path.dirname(__file__), stopwords), encoding='utf-8') as f:
@@ -57,17 +58,13 @@ class Task(metaclass=abc.ABCMeta):
         pass
 
     def _process_news(self, html: str) -> None:
-        self.pending.add(
-            asyncio.create_task(self.save_article(html, self.origin_dir, self.next_article_id, 'html'), name=''))
+        self._file_write_tasks.append(self.save_article(html, self.origin_dir, self.next_article_id, 'html'))
         soup = bs4.BeautifulSoup(html, features='lxml')
         article = self.extract_title_and_text(soup)
-        self.pending.add(
-            asyncio.create_task(self.save_article(article, self.article_dir, self.next_article_id, 'txt'),
-                                name=''))
+        self._file_write_tasks.append(self.save_article(article, self.article_dir, self.next_article_id, 'txt'))
+
         terms = '/'.join(self._cut_words(article))
-        self.pending.add(
-            asyncio.create_task(
-                self.save_article(terms, self.terms_dir, self.next_article_id, 'txt'), name=''))
+        self._file_write_tasks.append(self.save_article(terms, self.terms_dir, self.next_article_id, 'txt'))
         self.next_article_id += 1
 
     def _cut_words(self, text: str):
@@ -99,6 +96,7 @@ class Task(metaclass=abc.ABCMeta):
                 name = task.get_name()
                 if len(name):
                     self._event_map[name](await task)
+        await asyncio.gather(*self._file_write_tasks)
 
     @abc.abstractmethod
     async def run(self):
