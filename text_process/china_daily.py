@@ -49,7 +49,7 @@ class ChinaDailyTask(Task):
                 asyncio.create_task(self._fetch(f'http://www.chinadaily.com.cn/world/america/page_{i}.html'),
                                     name='get_news_list')
                 for i in range(1, 21))
-            await self.event_loop()
+            await self._event_loop()
 
 
 if __name__ == '__main__':

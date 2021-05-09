@@ -50,7 +50,7 @@ class GMWTask(Task):
                 asyncio.create_task(self._fetch(f'https://guancha.gmw.cn/node_{nodeid}_{i}.htm'),
                                     name='get_news_list')
                 for nodeid in (7292, 26275, 86599, 87838) for i in range(2, 11))
-            await self.event_loop()
+            await self._event_loop()
 
 
 if __name__ == '__main__':

@@ -1,6 +1,12 @@
 # cabbage-search
 
-## Run Script
+## Get Started
+
+**Install dependencies**
+```shell
+pip install -r requirements.txt
+```
+**Run scripts**
 ```shell
 python main.py
 ```

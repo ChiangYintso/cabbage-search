@@ -47,24 +47,39 @@ class Task(metaclass=abc.ABCMeta):
     @property
     @abc.abstractmethod
     def name(self) -> str:
+        """Name of the task."""
         pass
 
     @abc.abstractmethod
     def extract_title_and_text(self, soup: bs4.BeautifulSoup) -> str:
+        """
+        Extract title and text from html.
+        Args:
+            soup:
+                The data structure representing the parsed html of an article.
+        Returns:
+            title and text of the article.
+        """
         pass
 
     @abc.abstractmethod
     def extract_news_url(self, html: str) -> None:
+        """
+        Extract news url from given html of a website.
+        Args:
+            html:
+                html of the website to crawl.
+        """
         pass
 
     def _process_news(self, html: str) -> None:
-        self._file_write_tasks.append(self.save_article(html, self.origin_dir, self.next_article_id, 'html'))
+        self._file_write_tasks.append(self._save_article(html, self.origin_dir, self.next_article_id, 'html'))
         soup = bs4.BeautifulSoup(html, features='lxml')
         article = self.extract_title_and_text(soup)
-        self._file_write_tasks.append(self.save_article(article, self.article_dir, self.next_article_id, 'txt'))
+        self._file_write_tasks.append(self._save_article(article, self.article_dir, self.next_article_id, 'txt'))
 
         terms = '/'.join(self._cut_words(article))
-        self._file_write_tasks.append(self.save_article(terms, self.terms_dir, self.next_article_id, 'txt'))
+        self._file_write_tasks.append(self._save_article(terms, self.terms_dir, self.next_article_id, 'txt'))
         self.next_article_id += 1
 
     def _cut_words(self, text: str):
@@ -76,19 +91,27 @@ class Task(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def word_filter(self, word: str) -> Optional[str]:
+        """
+        Filter and may transform the word by stopwords list and the Porter Stemming Algorithm.
+        Args:
+            word:
+                word to process
+        Returns:
+            If the word is in stopwords list, returns None, else returns transformed word.
+        """
         pass
 
     async def _fetch(self, url: str) -> str:
         async with self.session.get(url, headers=_HEADERS) as response:
             return await response.text()
 
-    async def save_article(self, article: str, dirname: str, article_id: int, prefix: str):
+    async def _save_article(self, article: str, dirname: str, article_id: int, prefix: str):
         async with aiofiles.open(f'{dirname}/{self.name}_{article_id}.{prefix}',
                                  mode='w',
                                  encoding='utf-8') as f:
             await f.write(article)
 
-    async def event_loop(self):
+    async def _event_loop(self):
         while len(self.pending) > 0:
             self.done, self.pending = await asyncio.wait(self.pending, return_when=FIRST_COMPLETED)
             for task in self.done:
@@ -100,4 +123,5 @@ class Task(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     async def run(self):
+        """Run the task."""
         pass
