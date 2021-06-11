@@ -9,7 +9,9 @@ from _task import Task
 
 
 class GMWTask(Task):
-
+    """
+    Crawler for https://guancha.gmw.cn
+    """
     def __init__(self):
         super().__init__('stopwords_cn.txt')
 
@@ -22,15 +24,14 @@ class GMWTask(Task):
             return word
         return None
 
-    def extract_title_and_text(self, soup: bs4.BeautifulSoup) -> str:
-        title = soup.find('h1', {'class': 'u-title'}).contents[0]
+    def extract_title_and_text(self, soup: bs4.BeautifulSoup) -> (str, str):
+        title = str(soup.find('h1', {'class': 'u-title'}).contents[0]).strip()
 
         main_text = soup.find('div', {'class': 'u-mainText'})
         p_list = main_text.find_all('p')
 
-        article = title + '\n' + '\n'.join(p.contents[0] for p in p_list if
-                                           isinstance(p, bs4.Tag) and isinstance(p.contents[0], bs4.NavigableString))
-        return article
+        return title, '\n'.join(p.contents[0] for p in p_list if
+                                isinstance(p, bs4.Tag) and isinstance(p.contents[0], bs4.NavigableString))
 
     def extract_news_url(self, html: str):
         soup = bs4.BeautifulSoup(html, features='lxml')

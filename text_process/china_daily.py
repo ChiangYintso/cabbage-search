@@ -10,7 +10,9 @@ from _task import Task
 
 
 class ChinaDailyTask(Task):
-
+    """
+    Crawler for http://www.chinadaily.com.cn/world/america/
+    """
     def __init__(self):
         super().__init__('stopwords_en.txt')
         self._ps = nltk.PorterStemmer()
@@ -37,18 +39,18 @@ class ChinaDailyTask(Task):
                     asyncio.create_task(self._fetch('http:' + a.attrs['href']),
                                         name='download_news'))
 
-    def extract_title_and_text(self, soup: bs4.BeautifulSoup) -> str:
-        title = soup.find('h1').contents[0]
+    def extract_title_and_text(self, soup: bs4.BeautifulSoup) -> (str, str):
+        title = str(soup.find('h1').contents[0])
+        title = title.strip()
         text = '\n'.join(p.text for p in soup.find_all('p', attrs={'class': None}))
-
-        return title + '\n' + text
+        return title, text
 
     async def run(self):
         async with aiohttp.ClientSession() as self.session:
             self.pending = self.pending.union(
                 asyncio.create_task(self._fetch(f'http://www.chinadaily.com.cn/world/america/page_{i}.html'),
                                     name='get_news_list')
-                for i in range(1, 21))
+                for i in range(1, 41))
             await self._event_loop()
 
 

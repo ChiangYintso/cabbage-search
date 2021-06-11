@@ -5,6 +5,7 @@ import os
 from asyncio import FIRST_COMPLETED
 from pathlib import Path
 from typing import Optional
+from collections import OrderedDict
 
 import aiofiles
 import aiohttp
@@ -32,6 +33,8 @@ class Task(metaclass=abc.ABCMeta):
 
         self.pending: set = set()
         self.done: set = set()
+
+        self.titles = OrderedDict()
         self.next_article_id = 0
 
         self._file_write_tasks = []
@@ -51,14 +54,14 @@ class Task(metaclass=abc.ABCMeta):
         pass
 
     @abc.abstractmethod
-    def extract_title_and_text(self, soup: bs4.BeautifulSoup) -> str:
+    def extract_title_and_text(self, soup: bs4.BeautifulSoup) -> (str, str):
         """
         Extract title and text from html.
         Args:
             soup:
                 The data structure representing the parsed html of an article.
         Returns:
-            title and text of the article.
+            (title, content) of the article.
         """
         pass
 
@@ -75,12 +78,14 @@ class Task(metaclass=abc.ABCMeta):
     def _process_news(self, html: str) -> None:
         self._file_write_tasks.append(self._save_article(html, self.origin_dir, self.next_article_id, 'html'))
         soup = bs4.BeautifulSoup(html, features='lxml')
-        article = self.extract_title_and_text(soup)
-        self._file_write_tasks.append(self._save_article(article, self.article_dir, self.next_article_id, 'txt'))
+        title, content = self.extract_title_and_text(soup)
+        if title not in self.titles:
+            self._file_write_tasks.append(self._save_article(content, self.article_dir, self.next_article_id, 'txt'))
 
-        terms = '/'.join(self._cut_words(article))
-        self._file_write_tasks.append(self._save_article(terms, self.terms_dir, self.next_article_id, 'txt'))
-        self.next_article_id += 1
+            terms = '/'.join(self._cut_words(content))
+            self._file_write_tasks.append(self._save_article(terms, self.terms_dir, self.next_article_id, 'txt'))
+            self.titles.setdefault(title, self.next_article_id)
+            self.next_article_id += 1
 
     def _cut_words(self, text: str):
         for t in jieba.cut_for_search(text):
@@ -111,6 +116,10 @@ class Task(metaclass=abc.ABCMeta):
                                  encoding='utf-8') as f:
             await f.write(article)
 
+    async def _save_titles(self):
+        async with aiofiles.open(f'{self._DATA_ROOT}/{self.name}_titles.txt', mode='w', encoding='utf-8') as f:
+            await f.write('\n'.join(k for k in self.titles.keys()))
+
     async def _event_loop(self):
         while len(self.pending) > 0:
             self.done, self.pending = await asyncio.wait(self.pending, return_when=FIRST_COMPLETED)
@@ -118,8 +127,9 @@ class Task(metaclass=abc.ABCMeta):
                 task: asyncio.Task
                 name = task.get_name()
                 if len(name):
-                    self._event_map[name](await task)
-        await asyncio.gather(*self._file_write_tasks)
+                    html: str = await task
+                    self._event_map[name](html)
+        await asyncio.gather(*self._file_write_tasks, self._save_titles())
 
     @abc.abstractmethod
     async def run(self):
