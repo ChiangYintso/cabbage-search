@@ -76,14 +76,14 @@ class Task(metaclass=abc.ABCMeta):
         pass
 
     def _process_news(self, html: str) -> None:
-        self._file_write_tasks.append(self._save_article(html, self.origin_dir, self.next_article_id, 'html'))
+        self._file_write_tasks.append(self._save_files(html, self.origin_dir, self.next_article_id, 'html'))
         soup = bs4.BeautifulSoup(html, features='lxml')
         title, content = self.extract_title_and_text(soup)
         if title not in self.titles:
-            self._file_write_tasks.append(self._save_article(content, self.article_dir, self.next_article_id, 'txt'))
+            self._file_write_tasks.append(self._save_files(content, self.article_dir, self.next_article_id, 'txt'))
 
             terms = '/'.join(self._cut_words(content))
-            self._file_write_tasks.append(self._save_article(terms, self.terms_dir, self.next_article_id, 'txt'))
+            self._file_write_tasks.append(self._save_files(terms, self.terms_dir, self.next_article_id, 'txt'))
             self.titles.setdefault(title, self.next_article_id)
             self.next_article_id += 1
 
@@ -110,8 +110,8 @@ class Task(metaclass=abc.ABCMeta):
         async with self.session.get(url, headers=_HEADERS) as response:
             return await response.text()
 
-    async def _save_article(self, article: str, dirname: str, article_id: int, prefix: str):
-        async with aiofiles.open(f'{dirname}/{self.name}_{article_id}.{prefix}',
+    async def _save_files(self, article: str, dirname: str, article_id: int, prefix: str):
+        async with aiofiles.open(f'{dirname}/{self.name}_{"%05d" % article_id}.{prefix}',
                                  mode='w',
                                  encoding='utf-8') as f:
             await f.write(article)

@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Cabbage Search</title>
+</head>
+<body>
+<h1>Cabbage Search</h1>
+
+<label>
+    <input id="query_input"/>
+    <label><input name="lang" type="radio" value="cn" onclick="changeLang(this.value)" />中文</label>
+    <label><input name="lang" type="radio" value="en" onclick="changeLang(this.value)" />英文</label>
+</label>
+<button onclick="search()">搜索</button>
+<ul id="search_result">
+</ul>
+</body>
+
+<script>
+    const URL_PREFIX = "http://localhost:8080"
+    let lang = 'en';
+    function changeLang(value) {
+        lang = value
+    }
+    function fix(num, length) {
+        return ('' + num).length < length ? ((new Array(length + 1)).join('0') + num).slice(-length) : '' + num;
+    }
+
+    async function search() {
+        let q = document.getElementById("query_input").value
+        let response = await (await fetch(`${URL_PREFIX}/query?lang=${lang}&q=${q}`)).json()
+
+        console.log(response)
+        let search_list = document.getElementById("search_result")
+        search_list.innerHTML = ""
+        let docs = response['filePath']
+
+        for (let doc in docs) {
+            let li = document.createElement("li")
+            if (lang == "en") {
+                li.innerHTML += `<a href="${URL_PREFIX}/china_daily_org/china_daily_${fix(docs[doc]['docId'], 5)}.html">${docs[doc]['title']}</a>`
+            } else if (lang == "cn") {
+                li.innerHTML += `<a href="${URL_PREFIX}/gmw_org/gmw_${fix(docs[doc]['docId'], 5)}.html">${docs[doc]['title']}</a>`
+            }
+            search_list.appendChild(li)
+        }
+    }
+</script>
+</html>
